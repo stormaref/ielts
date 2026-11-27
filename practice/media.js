@@ -60,7 +60,7 @@ function loadMedia(asset) {
   status.className = 'media-transfer';
   const description = document.createElement('span');
   const progress = document.createElement('progress');
-  progress.setAttribute('aria-label', isAudio ? 'Audio download' : 'Chart download');
+  progress.setAttribute('aria-label', isAudio ? 'Audio download' : 'Image download');
   const retry = document.createElement('button');
   retry.textContent = 'Retry';
   status.append(description, progress, retry);
@@ -72,7 +72,7 @@ function loadMedia(asset) {
     status.hidden = false;
     progress.hidden = true;
     retry.hidden = false;
-    description.textContent = isAudio ? 'Audio could not load.' : 'Full-size chart could not load.';
+    description.textContent = isAudio ? 'Audio could not load.' : 'Full-size image could not load.';
   }
   asset.addEventListener('error', failed);
   asset.addEventListener(isAudio ? 'loadeddata' : 'load', () => {
@@ -84,7 +84,7 @@ function loadMedia(asset) {
     progress.removeAttribute('value');
     if (downloadedURL) URL.revokeObjectURL(downloadedURL);
     if (source.protocol !== 'http:' && source.protocol !== 'https:') {
-      description.textContent = isAudio ? 'Loading audio…' : 'Loading chart…';
+      description.textContent = isAudio ? 'Loading audio…' : 'Loading image…';
       asset.src = source.href;
       if (isAudio) asset.load();
       return;
@@ -92,7 +92,7 @@ function loadMedia(asset) {
     const request = new XMLHttpRequest();
     request.open('GET', source);
     request.responseType = 'blob';
-    description.textContent = isAudio ? 'Downloading audio…' : 'Downloading chart…';
+    description.textContent = isAudio ? 'Downloading audio…' : 'Downloading image…';
     request.onprogress = event => {
       if (event.lengthComputable && event.total > 0) {
         progress.max = event.total;

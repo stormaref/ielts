@@ -1,4 +1,4 @@
-# Only the public application and the approved Test 1 pack belong in Git.
+# Publish practice materials. Personal records and full book PDFs stay local.
 *
 !/.gitignore
 !/.nojekyll
@@ -7,16 +7,23 @@
 !/tracker/
 !/tracker/*.js
 !/tracker/*.css
+!/practice/
+!/practice/*.js
+!/practice/*.css
 !/Cambridge Practice Tests/
 !/Cambridge Practice Tests/Cambridge IELTS * Academic/
 !/Cambridge Practice Tests/Cambridge IELTS * Academic/Test [1-4]/
-!/Cambridge Practice Tests/Cambridge IELTS * Academic/Test [1-4]/index.html
-!/Cambridge Practice Tests/Cambridge IELTS 18 Academic/Test 1/*.html
-!/Cambridge Practice Tests/Cambridge IELTS 18 Academic/Test 1/assets/
-!/Cambridge Practice Tests/Cambridge IELTS 18 Academic/Test 1/assets/*.js
-!/Cambridge Practice Tests/Cambridge IELTS 18 Academic/Test 1/assets/*.css
+!/Cambridge Practice Tests/Cambridge IELTS * Academic/Test [1-4]/*.html
+!/Cambridge Practice Tests/Cambridge IELTS * Academic/Test [1-4]/Source text/
+!/Cambridge Practice Tests/Cambridge IELTS * Academic/Test [1-4]/Source text/**/
+!/Cambridge Practice Tests/Cambridge IELTS * Academic/Test [1-4]/Source text/**/*.md
+!/Cambridge Practice Tests/Cambridge IELTS * Academic/Test [1-4]/Source text/**/*.txt
+!/Cambridge Practice Tests/Cambridge IELTS * Academic/Test [1-4]/Source text/**/*.jpg
+!/Cambridge Practice Tests/Cambridge IELTS * Academic/Test [1-4]/Source text/**/*.png
+!/Cambridge Practice Tests/Cambridge IELTS * Academic/Test [1-4]/Source text/index.html
+!/Cambridge Practice Tests/Cambridge IELTS * Academic/Test [1-4]/assets/
+!/Cambridge Practice Tests/Cambridge IELTS * Academic/Test [1-4]/assets/*.webp
 !/Cambridge Practice Tests/Cambridge IELTS 18 Academic/Test 1/assets/writing-task-1.jpg
-!/Cambridge Practice Tests/Cambridge IELTS 18 Academic/Test 1/assets/writing-task-1-preview.webp
-!/Cambridge Practice Tests/Cambridge IELTS 18 Academic/Listening/
-!/Cambridge Practice Tests/Cambridge IELTS 18 Academic/Listening/Test 1/
-!/Cambridge Practice Tests/Cambridge IELTS 18 Academic/Listening/Test 1/*.mp3
+!/Cambridge Practice Tests/Cambridge IELTS * Academic/Listening/
+!/Cambridge Practice Tests/Cambridge IELTS * Academic/Listening/Test [1-4]/
+!/Cambridge Practice Tests/Cambridge IELTS * Academic/Listening/Test [1-4]/*.mp3

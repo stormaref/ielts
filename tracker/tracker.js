@@ -10,8 +10,7 @@ const params = new URLSearchParams(location.search);
 const book = Number(params.get('book')), test = Number(params.get('test'));
 const inTest = Number.isInteger(book) && book>=18 && book<=21 && Number.isInteger(test) && test>=1 && test<=4;
 const skill = params.get('skill');
-const interactive = book===18 && test===1;
-const practice = inTest && interactive && skills.includes(skill);
+const practice = inTest && skills.includes(skill);
 const prefix = 'ielts.practice.v1/';
 const memory = new Map();
 const content = document.getElementById('content');
@@ -58,9 +57,9 @@ function write(key,value) {
 function id(b,t,s,kind,n) { return [b+'-'+t,s,kind,n].filter(v=>v!==undefined).join('/'); }
 function report(b,t,s,n) {return read(id(b,t,s,'part',n));}
 function draft(b,t,s) {return read(id(b,t,s,'draft')) || {answers:{}};}
-function snapshot(s,n,answers) {
+function snapshot(b,t,s,n,answers) {
   if (!objective(s)) return {[s==='Writing'?'task'+n:'notes'+n]:answers[(s==='Writing'?'task':'notes')+n] || ''};
-  const [from,to]=ranges[s][n-1];
+  const [from,to]=testKeys[b+'-'+t].ranges[s][n-1];
   return Object.fromEntries(Object.entries(answers).filter(([key])=>{
     const q=Number(key.slice(1).split('-')[0]);
     return q>=from && q<=to;
@@ -71,7 +70,7 @@ function hasContent(answers) {
 }
 function partState(b,t,s,n) {
   const r=report(b,t,s,n);
-  const ans=b===18 && t===1 ? snapshot(s,n,draft(b,t,s).answers) : {};
+  const ans=snapshot(b,t,s,n,draft(b,t,s).answers);
   if(r?.snapshot && JSON.stringify(r.snapshot)!==JSON.stringify(ans)) return 'Revised draft';
   if(r) return r.status;
   return hasContent(ans)?'In progress':'Not started';
@@ -139,7 +138,7 @@ function resultLine(b,t,s,n,editable) {
   if(r?.correct!=null && r.total && state!=='Skipped')row.append(node('span',r.correct+' / '+r.total+' correct'));
   if(r?.words!=null)row.append(node('span',r.words+' words'));
   if(r?.feedback)row.append(node('small',r.feedback));
-  if(editable && interactive)row.append(link(state==='Not started'?'Start':'Open',url(b,t,s,n),'button'));
+  if(editable)row.append(link(state==='Not started'?'Start':'Open',url(b,t,s,n),'button'));
   if(r?.review?.length)row.append(answerReview(r.review));
   if(editable && localTracker) {
     const d=node('details'); d.append(node('summary','Status & feedback'));
@@ -153,20 +152,11 @@ function editor(b,t,s,n,r,current) {
   for(const a of states)select.add(new Option(a,a));
   select.value=states.includes(current)?current:'In progress';
   f.append(field('Status',select));
-  let correct,total;
-  if(objective(s) && !interactive) {
-    correct=numeric(40,r?.correct);total=numeric(40,r?.total);total.min=1;
-    f.append(field('Correct',correct),field('Out of',total));
-  }
   const note=node('textarea'); note.value=r?.feedback || '';
   f.append(field('Feedback',note),node('button','Save'));
   f.onsubmit=e=>{
     e.preventDefault();
-    if(correct && (Boolean(correct.value)!==Boolean(total.value) || Number(correct.value)>Number(total.value))) {
-      message('Enter both scores, with the correct count no higher than the total.');return;
-    }
     const values={...r,status:select.value,feedback:note.value,updated:new Date().toISOString()};
-    if(correct){values.correct=correct.value===''?null:Number(correct.value);values.total=total.value===''?null:Number(total.value);}
     if(select.value==='Skipped' || select.value==='Not started') {
       for(const k of ['correct','total','review','answered','words','snapshot']) delete values[k];
     }
@@ -202,17 +192,18 @@ function meter(value,max,label) {
 function overview() {
   const wrap=node('div',undefined,'overview');
   const feature=node('section',undefined,'practice-card');
-  const candidates=['Writing','Speaking','Reading','Listening'].flatMap(s=>
-    partsFor(18,1,s).map((status,i)=>({s,n:i+1,status})));
+  const candidates=[1,2,3,4].flatMap(t=>['Writing','Speaking','Reading','Listening'].flatMap(s=>
+    partsFor(selectedBook,t,s).map((status,i)=>({t,s,n:i+1,status}))));
   const next=candidates.find(p=>['In progress','Revised draft'].includes(p.status))
     || candidates.find(p=>p.status==='Not started');
-  feature.append(node('p','On computer','feature-label'),node('h2','Cambridge 18 · Test 1'));
+  const featuredTest=next?.t ?? 1;
+  feature.append(node('p','On computer','feature-label'),node('h2','Cambridge '+selectedBook+' · Test '+featuredTest));
   if(next) {
     feature.append(node('p',next.s+'  /  '+partLabels[next.s]+' '+next.n,'feature-part'));
     const action=next.status==='Not started'?'Start '+next.s.toLowerCase():'Resume '+next.s.toLowerCase();
-    feature.append(link(action+'  →',url(18,1,next.s,next.n),'button primary'));
+    feature.append(link(action+'  →',url(selectedBook,featuredTest,next.s,next.n),'button primary'));
   } else {
-    feature.append(link('Review test results  →',url(18,1),'button primary'));
+    feature.append(link('Review test results  →',url(selectedBook,featuredTest),'button primary'));
   }
   const progress=node('section',undefined,'progress-card');
   progress.append(node('h2','Progress by skill'));
@@ -232,15 +223,11 @@ function renderTest() {
   document.getElementById('title').textContent='Cambridge '+book+' · Test '+test;
   const intro=node('div',undefined,'test-intro');
   intro.append(link('← Test library','index.html?library='+book),node('span',completedCount(book,test)+' of '+fullTestParts+' parts completed'));
+  intro.append(link('Extracted materials ↗',testFolder+'Source text/index.html'));
   if(localTracker) {
-    const sources=link('Extracted text ↗',testFolder+'Source text/');
-    sources.target='_blank';
-    intro.append(sources);
-    if(!interactive) {
-      const pdf='Cambridge Practice Tests/Cambridge IELTS '+book+' Academic/Cambridge IELTS '+book+' Academic.pdf';
-      intro.append(link('Open book PDF ↗',pdf));
-      intro.lastChild.target='_blank';
-    }
+    const pdf='../Cambridge IELTS '+book+' Academic.pdf';
+    intro.append(link('Open book PDF ↗',testFolder+pdf));
+    intro.lastChild.target='_blank';
   }
   content.append(intro);
   const grid=node('div',undefined,'test-grid');
@@ -263,7 +250,7 @@ function libraryTest(b,t) {
   const box=node('details',undefined,'booktest'), summary=node('summary');
   const done=completedCount(b,t);
   const label=node('span',undefined,'test-name');
-  label.append(node('strong','Test '+t),node('small',b===18 && t===1?'Computer practice':localTracker?'Manual entry':'Offline practice'));
+  label.append(node('strong','Test '+t),node('small','Computer practice'));
   const prog=node('span',undefined,'test-progress');
   prog.append(meter(done,fullTestParts,'Parts completed'),node('small',done+' / '+fullTestParts+' completed'));
   const score=node('span',undefined,'row-score');
@@ -276,7 +263,7 @@ function libraryTest(b,t) {
   const bands=skills.map(s=>read(id(b,t,s,'band'))?.value);
   if(bands.every(v=>typeof v==='number'))marks.unshift('Overall '+(Math.round(bands.reduce((a,x)=>a+x,0)/2)/2));
   score.textContent=marks.join(' · ') || '—';
-  const destination=link(b===18 && t===1?'Open test →':localTracker?'Log results →':'View results →',url(b,t),'row-link');
+  const destination=link('Open test →',url(b,t),'row-link');
   destination.setAttribute('aria-label',destination.textContent+' Cambridge '+b+', Test '+t);
   summary.append(label,prog,score,destination);
   const detail=node('div',undefined,'breakdown');
@@ -309,6 +296,7 @@ function renderLibrary() {
     btn.setAttribute('aria-pressed',String(b===selectedBook));
     btn.onclick=()=>{
       selectedBook=b;
+      content.querySelector('.overview').replaceWith(overview());
       for(const other of picker.children)other.setAttribute('aria-pressed',String(other===btn));
       for(const [number,group] of groups)group.hidden=number!==b;
       const tabURL=new URL(location.href);tabURL.searchParams.set('library',b);
@@ -408,9 +396,9 @@ if (practice) {
   download.hidden=false;download.onclick=()=>exportResults(true);
   const key=id(book,test,skill,'draft');
   window.addEventListener('message',e=>{
-    if(e.source!==frame.contentWindow || !isObj(e.data) || e.data.channel!=='ielts18-test1')return;
+    if(e.source!==frame.contentWindow || !isObj(e.data) || e.data.channel!=='ielts-'+testId)return;
     const msg=e.data;
-    function send(data){frame.contentWindow.postMessage({channel:'ielts18-test1',...data},'*');}
+    function send(data){frame.contentWindow.postMessage({channel:'ielts-'+testId,...data},'*');}
     if(msg.type==='ready') {
       send({type:'start',draft:read(key),part:Number(params.get('part'))});
     } else if(msg.type==='draft' && validDraft(msg.value)) {
@@ -419,11 +407,11 @@ if (practice) {
     } else if(msg.type==='submit' && Number.isInteger(msg.part) && msg.part>=1 && msg.part<=partCounts[skill] && validDraft(msg.value)) {
       const n=msg.part;
       write(key,msg.value);
-      const answers=snapshot(skill,n,msg.value.answers);
+      const answers=snapshot(book,test,skill,n,msg.value.answers);
       const result={status:objective(skill)?'Completed':'Needs review',snapshot:answers,updated:new Date().toISOString()};
       let text;
       if(objective(skill)){
-        Object.assign(result,scorePart(skill,n,answers));
+        Object.assign(result,scorePart(book,test,skill,n,answers));
         text=result.correct+' / '+result.total+' correct · '+(result.total-result.answered)+' unanswered';
       } else {
         if(skill==='Writing')result.words=(answers['task'+n]||'').trim().split(/\s+/).filter(Boolean).length;
@@ -436,7 +424,7 @@ if (practice) {
     }
   });
   frame.hidden=false;
-  frame.src=testFolder+skill+'.html?v=20261127c';
+  frame.src=testFolder+skill+'.html?v=library1';
 } else {
   window.addEventListener('storage',e=>{if(e.key===null || e.key.startsWith(prefix))render();});
   render();

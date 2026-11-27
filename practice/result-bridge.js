@@ -2,11 +2,11 @@
 
 // Run the four local practice pages inside the tracker so their result store is shared.
 const trackerURL = new URL('../../../index.html',location.href);
-trackerURL.search = new URLSearchParams({book:18,test:1,skill:document.body.dataset.skill});
+trackerURL.search = new URLSearchParams({book,test,skill});
 if (window.parent === window) {
   location.replace(trackerURL);
 } else {
-  const tellTracker = data => parent.postMessage({channel:'ielts18-test1',...data},'*');
+  const tellTracker = data => parent.postMessage({channel,...data},'*');
   const savePart = document.createElement('button');
   savePart.id='submit-part';
   const responseNotice=document.createElement('span');
@@ -48,7 +48,7 @@ if (window.parent === window) {
   let initialized=false;
   window.addEventListener('ielts-draft',()=>{if(initialized)tellTracker({type:'draft',value:state});});
   window.addEventListener('message',e=>{
-    if(e.source!==parent || e.data?.channel!=='ielts18-test1')return;
+    if(e.source!==parent || e.data?.channel!==channel)return;
     if(e.data.type==='notice'){responseNotice.textContent=e.data.text;return;}
     if(e.data.type!=='start' || initialized)return;
     if(e.data.draft?.answers && (e.data.draft.editedAt || 0) >= (state.editedAt || 0)){

@@ -1,7 +1,9 @@
 'use strict';
 
-const skill = document.body.dataset.skill;
-const storageKey = 'cambridge-academic-18-test-1-v1-' + skill;
+const {book, test, skill} = document.body.dataset;
+const testName = 'Cambridge ' + book + ' - Test ' + test;
+const channel = 'ielts-' + book + '-' + test;
+const storageKey = 'cambridge-academic-' + book + '-test-' + test + '-v1-' + skill;
 const sections = [...document.querySelectorAll('.section')];
 const fields = [...document.querySelectorAll('[name]')].filter(el => el.matches('input,textarea,select'));
 const names = [...new Set(fields.map(el => el.name))];
@@ -134,7 +136,7 @@ timer.addEventListener('click', () => {
 setInterval(tick, 500);
 
 document.getElementById('download').addEventListener('click', () => {
-  const lines = ['Cambridge IELTS 18 Academic · Test 1 · ' + skill, ''];
+  const lines = [testName + ' · ' + skill, ''];
   for (const name of names) {
     const answer = state.answers[name];
     const title = name.replace(/^q/, 'Question ').replace(/^task/, 'Writing task ').replace(/^notes/, 'Speaking notes, part ');
@@ -143,7 +145,7 @@ document.getElementById('download').addEventListener('click', () => {
   const url = URL.createObjectURL(new Blob([lines.join('\n')], {type:'text/plain;charset=utf-8'}));
   const link = document.createElement('a');
   link.href = url;
-  link.download = 'Cambridge 18 - Test 1 - ' + skill + '.txt';
+  link.download = testName + ' - ' + skill + '.txt';
   link.click();
   setTimeout(() => URL.revokeObjectURL(url), 30000);
 });
@@ -174,7 +176,7 @@ for (const box of document.querySelectorAll('.recorder')) {
         const link = document.createElement('a');
         link.textContent = 'Download recording';
         link.href = url;
-        link.download = 'Cambridge 18 - Test 1 - Speaking Part ' + box.dataset.part + (recorder.mimeType.includes('mp4') ? '.mp4' : '.webm');
+        link.download = testName + ' - Speaking Part ' + box.dataset.part + (recorder.mimeType.includes('mp4') ? '.mp4' : '.webm');
         box.querySelector('.clips').append(player,link);
         loadMedia(player);
         btn.textContent = 'Record again';
