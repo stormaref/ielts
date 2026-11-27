@@ -1,0 +1,21 @@
+# Only the public application and the approved Test 1 pack belong in Git.
+*
+!/.gitignore
+!/.nojekyll
+!/README.md
+!/index.html
+!/tracker/
+!/tracker/*.js
+!/tracker/*.css
+!/Cambridge Practice Tests/
+!/Cambridge Practice Tests/Cambridge IELTS * Academic/
+!/Cambridge Practice Tests/Cambridge IELTS * Academic/Test [1-4]/
+!/Cambridge Practice Tests/Cambridge IELTS * Academic/Test [1-4]/index.html
+!/Cambridge Practice Tests/Cambridge IELTS 18 Academic/Test 1/*.html
+!/Cambridge Practice Tests/Cambridge IELTS 18 Academic/Test 1/assets/
+!/Cambridge Practice Tests/Cambridge IELTS 18 Academic/Test 1/assets/*.js
+!/Cambridge Practice Tests/Cambridge IELTS 18 Academic/Test 1/assets/*.css
+!/Cambridge Practice Tests/Cambridge IELTS 18 Academic/Test 1/assets/writing-task-1.jpg
+!/Cambridge Practice Tests/Cambridge IELTS 18 Academic/Listening/
+!/Cambridge Practice Tests/Cambridge IELTS 18 Academic/Listening/Test 1/
+!/Cambridge Practice Tests/Cambridge IELTS 18 Academic/Listening/Test 1/*.mp3

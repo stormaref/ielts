@@ -1,0 +1,31 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>IELTS practice tracker</title>
+  <link rel="stylesheet" href="tracker/tracker.css">
+  <script defer src="tracker/catalogue.js"></script>
+  <script defer src="tracker/tracker.js"></script>
+</head>
+<body>
+  <header class="masthead">
+    <div class="mast-inner">
+      <a href="index.html" class="brand"><i class="book-mark" aria-hidden="true"></i>IELTS Practice</a>
+      <span id="location">Academic</span>
+      <span class="exam" hidden><span>Exam day</span> <time></time></span>
+      <button id="practice-export" hidden>Download test results</button>
+      <a id="back" hidden>Test results ↗</a>
+    </div>
+  </header>
+  <main id="dashboard">
+    <div class="heading">
+      <h1 id="title">Practice dashboard</h1>
+      <div class="actions"><button id="backup">Export results</button><button id="restore">Import results</button><input type="file" id="file" accept=".json,application/json" hidden></div>
+    </div>
+    <p id="notice" aria-live="polite"></p>
+    <div id="content"></div>
+  </main>
+  <iframe allow="microphone *" id="practice" title="IELTS practice section" hidden></iframe>
+</body>
+</html>
