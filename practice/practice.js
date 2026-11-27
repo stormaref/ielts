@@ -116,6 +116,7 @@ function secondsLeft() {
   return state.deadline ? Math.max(0, (state.deadline - Date.now()) / 1000) : state.remaining;
 }
 function tick() {
+  if (!clock) return;
   const seconds = Math.ceil(secondsLeft());
   clock.textContent = String(Math.floor(seconds / 60)).padStart(2,'0') + ':' + String(seconds % 60).padStart(2,'0');
   if (!seconds && state.deadline) {
@@ -175,13 +176,14 @@ if (skill === 'Speaking') {
     saveTimer();
   });
   window.addEventListener('pagehide', () => {
+    if (activeRecorder?.state === 'recording') activeRecorder.stop();
     if (state.mediaTimer) {
       pauseTimer();
       saveTimer();
     }
   });
 }
-setInterval(tick, 500);
+if (clock) setInterval(tick, 500);
 
 document.getElementById('download').addEventListener('click', () => {
   const lines = [testName + ' · ' + skill, ''];
@@ -213,6 +215,7 @@ for (const box of document.querySelectorAll('.recorder')) {
       const started = performance.now();
       recorder.ondataavailable = event => { if (event.data.size) buffers.push(event.data); };
       recorder.onstop = () => {
+        delete box.dataset.recording;
         stopSpeakingTimer(recorder);
         if (activeRecorder === recorder) activeRecorder = null;
         stream.getTracks().forEach(track => track.stop());
@@ -240,6 +243,8 @@ for (const box of document.querySelectorAll('.recorder')) {
       startSpeakingTimer(recorder);
       btn.textContent = 'Stop recording';
       note.textContent = 'Recording…';
+      box.dataset.recording = 'true';
+      window.showMicrophoneSignal?.(box.querySelector('.mic-signal'), recorder);
     } catch {
       note.textContent = 'Microphone unavailable. Check browser permission or record on your phone.';
     } finally {
