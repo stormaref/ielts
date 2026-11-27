@@ -55,6 +55,8 @@ if (window.parent === window) {
       Object.assign(state,e.data.draft);
       restoreFields();
     }
+    // A restored draft has no active recording or playback.
+    if (skill === 'Speaking' && state.mediaTimer && !speakingMedia.size) pauseTimer();
     document.body.dataset.ready = "true";
     showPart(e.data.part || state.tab);
     initialized=true;

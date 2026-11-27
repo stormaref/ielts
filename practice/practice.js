@@ -111,28 +111,60 @@ document.querySelectorAll('[data-tab]').forEach(btn => btn.addEventListener('cli
 }));
 
 function secondsLeft() {
-  return state.deadline ? Math.max(0, Math.ceil((state.deadline - Date.now()) / 1000)) : state.remaining;
+  return state.deadline ? Math.max(0, (state.deadline - Date.now()) / 1000) : state.remaining;
 }
 function tick() {
-  const seconds = secondsLeft();
+  const seconds = Math.ceil(secondsLeft());
   clock.textContent = String(Math.floor(seconds / 60)).padStart(2,'0') + ':' + String(seconds % 60).padStart(2,'0');
   if (!seconds && state.deadline) {
     state.deadline = 0;
     state.remaining = 0;
+    delete state.mediaTimer;
     persist();
   }
   timer.textContent = state.deadline ? 'Pause timer' : seconds === 0 ? 'Restart timer' : seconds === duration ? 'Start timer' : 'Resume timer';
 }
-timer.addEventListener('click', () => {
-  if (state.deadline) {
-    state.remaining = secondsLeft();
-    state.deadline = 0;
-  } else {
-    state.deadline = Date.now() + (state.remaining || duration) * 1000;
+const speakingMedia = new Set();
+function startSpeakingTimer(source) {
+  if (speakingMedia.has(source)) return;
+  speakingMedia.add(source);
+  if (secondsLeft() <= 0) return;
+  state.mediaTimer = true;
+  if (!state.deadline) state.deadline = Date.now() + state.remaining * 1000;
+  saveTimer();
+}
+function stopSpeakingTimer(source) {
+  if (speakingMedia.delete(source) && !speakingMedia.size && state.mediaTimer) {
+    pauseTimer();
+    saveTimer();
   }
-  persist();
+}
+function pauseTimer() {
+  state.remaining = secondsLeft();
+  state.deadline = 0;
+  delete state.mediaTimer;
+}
+function saveTimer() {
+  state.editedAt = Date.now();
   tick();
+  persist();
+}
+timer.addEventListener('click', () => {
+  if (state.deadline) pauseTimer();
+  else {
+    state.deadline = Date.now() + (state.remaining || duration) * 1000;
+    if (speakingMedia.size) state.mediaTimer = true;
+  }
+  saveTimer();
 });
+if (skill === 'Speaking') {
+  window.addEventListener('pagehide', () => {
+    if (state.mediaTimer) {
+      pauseTimer();
+      saveTimer();
+    }
+  });
+}
 setInterval(tick, 500);
 
 document.getElementById('download').addEventListener('click', () => {
@@ -156,19 +188,24 @@ for (const box of document.querySelectorAll('.recorder')) {
   btn.addEventListener('click', async () => {
     if (activeRecorder?.state === 'recording') { activeRecorder.stop(); return; }
     btn.disabled = true;
-    let stream;
+    let stream, recorder;
     try {
       stream = await navigator.mediaDevices.getUserMedia({audio:true});
       if (box.closest('.section').hidden) return;
-      const recorder = new MediaRecorder(stream);
-      activeRecorder = recorder;
+      recorder = new MediaRecorder(stream);
       const buffers = [];
       const started = performance.now();
       recorder.ondataavailable = event => { if (event.data.size) buffers.push(event.data); };
       recorder.onstop = () => {
+        stopSpeakingTimer(recorder);
+        if (activeRecorder === recorder) activeRecorder = null;
         stream.getTracks().forEach(track => track.stop());
         const url = URL.createObjectURL(new Blob(buffers, {type:recorder.mimeType}));
         const player = document.createElement('audio');
+        player.addEventListener('playing', () => startSpeakingTimer(player));
+        for (const event of ['pause','ended','waiting','emptied','error']) {
+          player.addEventListener(event, () => stopSpeakingTimer(player));
+        }
         player.dataset.src = url;
         player.dataset.seconds = (performance.now() - started) / 1000;
         player.setAttribute('aria-label','Speaking part '+box.dataset.part+' recording');
@@ -181,15 +218,16 @@ for (const box of document.querySelectorAll('.recorder')) {
         loadMedia(player);
         btn.textContent = 'Record again';
         note.textContent = 'Download to keep this recording.';
-        activeRecorder = null;
       };
       recorder.start();
+      activeRecorder = recorder;
+      startSpeakingTimer(recorder);
       btn.textContent = 'Stop recording';
       note.textContent = 'Recording…';
     } catch {
       note.textContent = 'Microphone unavailable. Check browser permission or record on your phone.';
     } finally {
-      if (stream && !activeRecorder) stream.getTracks().forEach(track => track.stop());
+      if (stream && recorder?.state !== 'recording') stream.getTracks().forEach(track => track.stop());
       btn.disabled = false;
     }
   });
