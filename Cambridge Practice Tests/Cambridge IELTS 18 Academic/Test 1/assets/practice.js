@@ -93,6 +93,12 @@ function showPart(n) {
     if (section.hidden) section.querySelectorAll('audio').forEach(player => player.pause());
   });
   document.querySelectorAll('[data-tab]').forEach(btn => btn.setAttribute('aria-pressed', String(Number(btn.dataset.tab) === n)));
+  document.querySelectorAll('.listening-track').forEach(track => {
+    track.hidden = Number(track.dataset.track) !== n;
+    const audio = track.querySelector('audio');
+    if (track.hidden) audio.pause();
+    else if (document.body.dataset.ready) loadMedia(audio);
+  });
   state.tab = n;
   if (document.body.dataset.ready) sections[n-1].querySelectorAll('[data-src]').forEach(loadMedia);
 }

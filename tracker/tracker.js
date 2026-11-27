@@ -436,7 +436,7 @@ if (practice) {
     }
   });
   frame.hidden=false;
-  frame.src=testFolder+skill+'.html';
+  frame.src=testFolder+skill+'.html?v=20261127b';
 } else {
   window.addEventListener('storage',e=>{if(e.key===null || e.key.startsWith(prefix))render();});
   render();

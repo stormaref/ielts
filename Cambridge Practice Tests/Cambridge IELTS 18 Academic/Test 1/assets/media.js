@@ -52,7 +52,7 @@ function loadMedia(asset) {
   if (asset.dataset.started) return;
   asset.dataset.started = 'true';
   const isAudio = asset instanceof HTMLAudioElement;
-  const control = isAudio ? audioControls(asset) : asset.closest('a') || asset;
+  const control = isAudio ? audioControls(asset) : asset;
   const status = document.createElement('div');
   status.className = 'media-transfer';
   const description = document.createElement('span');
@@ -68,11 +68,11 @@ function loadMedia(asset) {
     status.hidden = false;
     progress.hidden = true;
     retry.hidden = false;
-    description.textContent = isAudio ? 'Audio could not load.' : 'Chart could not load.';
+    description.textContent = isAudio ? 'Audio could not load.' : 'Full-size chart could not load.';
   }
   asset.addEventListener('error', failed);
   asset.addEventListener(isAudio ? 'loadeddata' : 'load', () => {
-    status.hidden = true;
+    if (isAudio || asset.src === downloadedURL || asset.src === source.href) status.hidden = true;
   });
   function start() {
     status.hidden = progress.hidden = false;
@@ -102,7 +102,6 @@ function loadMedia(asset) {
       downloadedURL = URL.createObjectURL(request.response);
       asset.src = downloadedURL;
       if (isAudio) asset.load();
-      else if (control.tagName === 'A') control.href = downloadedURL;
     };
     request.send();
   }

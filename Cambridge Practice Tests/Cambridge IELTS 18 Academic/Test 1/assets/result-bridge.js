@@ -30,7 +30,7 @@ if (window.parent === window) {
   panePicker.setAttribute('role','group');
   panePicker.setAttribute('aria-label','Practice view');
   const paneLabels = {
-    Reading: ['Passage','Questions'], Listening: ['Audio','Questions'],
+    Reading: ['Passage','Questions'], Listening: ['Instructions','Questions'],
     Writing: ['Prompt','Response'], Speaking: ['Prompt','Response']
   };
   for (const [index,label] of paneLabels[skill].entries()) {
