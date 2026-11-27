@@ -256,7 +256,8 @@ for (const box of document.querySelectorAll('.recorder')) {
         if (takeGeneration !== generation) return;
         delete box.dataset.recording;
         const recordedSeconds = updateElapsed();
-        const url = URL.createObjectURL(new Blob(buffers, {type:recorder.mimeType}));
+        const mimeType = buffers[0]?.type || recorder.mimeType;
+        const url = URL.createObjectURL(new Blob(buffers, {type:mimeType}));
         const player = document.createElement('audio');
         player.addEventListener('playing', () => startSpeakingTimer(player));
         for (const event of ['pause','ended','waiting','emptied','error']) {
@@ -279,7 +280,7 @@ for (const box of document.querySelectorAll('.recorder')) {
         download.onclick = () => {
           const link = document.createElement('a');
           link.href = url;
-          const extension = recorder.mimeType.split(';')[0].split('/')[1] || 'webm';
+          const extension = mimeType.split(';')[0].split('/')[1] || 'webm';
           link.download = testName + ' - Speaking Part ' + box.dataset.part + ' - ' + title.textContent + '.' + extension;
           link.click();
         };
