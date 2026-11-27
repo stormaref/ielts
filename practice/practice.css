@@ -175,4 +175,5 @@ td .gap input { min-width:0 }
 
 .recorded-clip { padding:.65rem 0; border-top:1px solid var(--line); }
 .recorded-clip .audio-player { margin:.35rem 0; }
-.recorded-clip > button { margin-inline-start:.7rem; }
+.clip-actions { display:flex; flex-wrap:wrap; gap:.55rem; }
+.restart-part { display:block; margin:0 0 .75rem auto; }

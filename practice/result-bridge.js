@@ -58,11 +58,43 @@ if (window.parent === window) {
     restart.disabled = true;
     tellTracker({type:'restart'});
   };
+  const partName = n => partType[0].toUpperCase() + partType.slice(1) + ' ' + n;
+  const restartParts = sections.map((section, i) => {
+    const n = i + 1;
+    const button = document.createElement('button');
+    button.type = 'button';
+    button.className = 'restart-part';
+    button.textContent = 'Restart ' + partName(n);
+    button.disabled = true;
+    button.onclick = () => {
+      const contents = skill === 'Speaking' ? 'notes and recordings' : 'answers';
+      if (confirm('Restart ' + skill + ' ' + partName(n) + ' for ' + testName +
+          '? This clears the ' + contents + ', result and feedback for this ' + partType + '.')) {
+        tellTracker({type:'restart-part',part:n,attemptStartedAt:state.attemptStartedAt || 0});
+      }
+    };
+    section.querySelector('.response').prepend(button);
+    return button;
+  });
   let initialized=false;
   window.addEventListener('ielts-draft',()=>{if(initialized)tellTracker({type:'draft',value:state});});
   window.addEventListener('message',e=>{
     if(e.source!==parent || e.data?.channel!==channel)return;
     if(e.data.type==='notice'){responseNotice.textContent=e.data.text;return;}
+    if (e.data.type === 'part-restarted') {
+      const n = e.data.part;
+      state.attemptStartedAt = e.data.stamp;
+      state.editedAt = e.data.stamp;
+      state.answers = e.data.answers;
+      sections[n-1].querySelector('.recorder')?.dispatchEvent(new Event('restart-part'));
+      const audio = document.querySelector('.listening-track[data-track="'+n+'"] audio');
+      if (audio) { audio.pause(); audio.currentTime = 0; }
+      restoreFields();
+      updateCounts();
+      persist();
+      responseNotice.textContent = partName(n) + ' restarted.';
+      return;
+    }
     if(e.data.type!=='start' || initialized)return;
     const draft = e.data.draft;
     if (draft?.answers && ((draft.attemptStartedAt || 0) > (state.attemptStartedAt || 0)
@@ -79,6 +111,7 @@ if (window.parent === window) {
     updateCounts();tick();persist();
     savePart.disabled=false;
     restart.disabled=false;
+    restartParts.forEach(button => { button.disabled = false; });
   });
   savePart.onclick=()=>{
     const panel=sections[state.tab-1];

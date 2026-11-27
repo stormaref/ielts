@@ -204,20 +204,41 @@ for (const box of document.querySelectorAll('.recorder')) {
   const btn = box.querySelector('button');
   const note = box.querySelector('.rec-status');
   const clips = box.querySelector('.clips');
-  let takeNumber = 0;
+  let takeNumber = 0, generation = 0, currentRecorder;
   const elapsed = document.createElement('span');
   elapsed.className = 'rec-elapsed';
   elapsed.setAttribute('role', 'timer');
   elapsed.setAttribute('aria-label', 'Recording duration');
   elapsed.hidden = true;
   btn.after(elapsed);
+  function discardClip(clip) {
+    const player = clip.querySelector('audio');
+    player.pause();
+    stopSpeakingTimer(player);
+    player.removeAttribute('src');
+    player.load();
+    URL.revokeObjectURL(player.dataset.src);
+    clip.remove();
+  }
+  box.addEventListener('restart-part', () => {
+    generation++;
+    if (currentRecorder?.state === 'recording') currentRecorder.stop();
+    clips.querySelectorAll('.recorded-clip').forEach(discardClip);
+    takeNumber = 0;
+    delete box.dataset.recording;
+    elapsed.hidden = true;
+    note.textContent = '';
+    btn.textContent = 'Record response';
+    btn.disabled = false;
+  });
   btn.addEventListener('click', async () => {
     if (activeRecorder?.state === 'recording') { activeRecorder.stop(); return; }
     btn.disabled = true;
+    const takeGeneration = generation;
     let stream, recorder;
     try {
       stream = await navigator.mediaDevices.getUserMedia({audio:true});
-      if (box.closest('.section').hidden) return;
+      if (takeGeneration !== generation || box.closest('.section').hidden) return;
       recorder = new MediaRecorder(stream);
       const buffers = [];
       let started, refresh;
@@ -229,11 +250,12 @@ for (const box of document.querySelectorAll('.recorder')) {
       recorder.ondataavailable = event => { if (event.data.size) buffers.push(event.data); };
       recorder.onstop = () => {
         clearInterval(refresh);
-        const recordedSeconds = updateElapsed();
-        delete box.dataset.recording;
         stopSpeakingTimer(recorder);
         if (activeRecorder === recorder) activeRecorder = null;
         stream.getTracks().forEach(track => track.stop());
+        if (takeGeneration !== generation) return;
+        delete box.dataset.recording;
+        const recordedSeconds = updateElapsed();
         const url = URL.createObjectURL(new Blob(buffers, {type:recorder.mimeType}));
         const player = document.createElement('audio');
         player.addEventListener('playing', () => startSpeakingTimer(player));
@@ -244,26 +266,30 @@ for (const box of document.querySelectorAll('.recorder')) {
         player.dataset.seconds = recordedSeconds;
         player.setAttribute('aria-label','Speaking part '+box.dataset.part+' recording');
 
-        const link = document.createElement('a');
-        link.textContent = 'Download recording';
-        link.href = url;
-        link.download = testName + ' - Speaking Part ' + box.dataset.part + (recorder.mimeType.includes('mp4') ? '.mp4' : '.webm');
         const clip = document.createElement('div');
         clip.className = 'recorded-clip';
         const title = document.createElement('strong');
         title.textContent = 'Take ' + (++takeNumber);
+        const actions = document.createElement('div');
+        actions.className = 'clip-actions';
+        const download = document.createElement('button');
+        download.type = 'button';
+        download.textContent = 'Download';
+        download.setAttribute('aria-label', 'Download ' + title.textContent);
+        download.onclick = () => {
+          const link = document.createElement('a');
+          link.href = url;
+          const extension = recorder.mimeType.split(';')[0].split('/')[1] || 'webm';
+          link.download = testName + ' - Speaking Part ' + box.dataset.part + ' - ' + title.textContent + '.' + extension;
+          link.click();
+        };
         const remove = document.createElement('button');
         remove.type = 'button';
-        remove.textContent = 'Remove recording';
+        remove.textContent = 'Remove';
         remove.setAttribute('aria-label', 'Remove ' + title.textContent);
         remove.onclick = () => {
           if (!confirm('Remove ' + title.textContent + ' from Speaking Part ' + box.dataset.part + '?')) return;
-          player.pause();
-          stopSpeakingTimer(player);
-          player.removeAttribute('src');
-          player.load();
-          URL.revokeObjectURL(url);
-          clip.remove();
+          discardClip(clip);
           if (!box.dataset.recording) {
             const last = clips.querySelector('.recorded-clip:last-child audio');
             elapsed.hidden = !last;
@@ -273,7 +299,8 @@ for (const box of document.querySelectorAll('.recorder')) {
           }
           btn.focus();
         };
-        clip.append(title,player,link,remove);
+        actions.append(download,remove);
+        clip.append(title,player,actions);
         clips.append(clip);
         loadMedia(player);
         btn.textContent = 'Record again';
@@ -284,17 +311,17 @@ for (const box of document.querySelectorAll('.recorder')) {
       updateElapsed();
       elapsed.hidden = false;
       refresh = setInterval(updateElapsed, 200);
-      activeRecorder = recorder;
+      currentRecorder = activeRecorder = recorder;
       startSpeakingTimer(recorder);
       btn.textContent = 'Stop recording';
       note.textContent = 'Recording…';
       box.dataset.recording = 'true';
       window.showMicrophoneSignal?.(box.querySelector('.mic-signal'), recorder);
     } catch {
-      note.textContent = 'Microphone unavailable. Check browser permission or record on your phone.';
+      if (takeGeneration === generation) note.textContent = 'Microphone unavailable. Check browser permission or record on your phone.';
     } finally {
       if (stream && recorder?.state !== 'recording') stream.getTracks().forEach(track => track.stop());
-      btn.disabled = false;
+      if (takeGeneration === generation) btn.disabled = false;
     }
   });
 }

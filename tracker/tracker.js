@@ -54,6 +54,10 @@ function write(key,value) {
     return false;
   }
 }
+function clearRecord(key) {
+  try { localStorage.removeItem(prefix+key); memory.delete(key); }
+  catch { memory.set(key,null); }
+}
 function id(b,t,s,kind,n) { return [b+'-'+t,s,kind,n].filter(v=>v!==undefined).join('/'); }
 function report(b,t,s,n) {return read(id(b,t,s,'part',n));}
 function draft(b,t,s) {return read(id(b,t,s,'draft')) || {answers:{}};}
@@ -406,15 +410,24 @@ if (practice) {
       write(key,{answers:{}, tab:1, attemptStartedAt:stamp, editedAt:stamp});
       const records = [id(book,test,skill,'band')];
       for (let n=1; n<=partCounts[skill]; n++) records.push(id(book,test,skill,'part',n));
-      for (const record of records) {
-        try { localStorage.removeItem(prefix+record); memory.delete(record); }
-        catch { memory.set(record,null); }
-      }
+      records.forEach(clearRecord);
       params.delete('part');
       const destination=new URL(location.href);
       destination.searchParams.delete('part');
       try { history.replaceState(null,'',destination); } catch {}
       frame.src = frame.src;
+    } else if (msg.type === 'restart-part' && Number.isInteger(msg.part) && msg.part >= 1 && msg.part <= partCounts[skill]) {
+      const draft = read(key) || {answers:{}};
+      if ((draft.attemptStartedAt || 0) !== msg.attemptStartedAt) {
+        send({type:'notice',text:'This attempt changed in another tab. Reload before restarting.'});
+        return;
+      }
+      const stamp = Math.max(Date.now(), msg.attemptStartedAt+1);
+      const answers = {...draft.answers};
+      for (const name of Object.keys(snapshot(book,test,skill,msg.part,answers))) delete answers[name];
+      write(key,{...draft,answers,attemptStartedAt:stamp,editedAt:stamp});
+      clearRecord(id(book,test,skill,'part',msg.part));
+      send({type:'part-restarted',part:msg.part,stamp,answers});
     } else if ((msg.type==='draft' || msg.type==='submit') && (msg.value?.attemptStartedAt || 0) < (read(key)?.attemptStartedAt || 0)) {
       send({type:'notice',text:'This skill was restarted. Reload to open the current attempt.'});
     } else if(msg.type==='draft' && validDraft(msg.value)) {
@@ -440,7 +453,7 @@ if (practice) {
     }
   });
   frame.hidden=false;
-  frame.src=testFolder+skill+'.html?v=restart1';
+  frame.src=testFolder+skill+'.html?v=part2';
 } else {
   window.addEventListener('storage',e=>{if(e.key===null || e.key.startsWith(prefix))render();});
   render();
