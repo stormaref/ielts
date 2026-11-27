@@ -424,7 +424,7 @@ if (practice) {
     }
   });
   frame.hidden=false;
-  frame.src=testFolder+skill+'.html?v='+(['Speaking','Listening'].includes(skill)?'signal1':'library1');
+  frame.src=testFolder+skill+'.html?v='+({Speaking:'elapsed1',Listening:'signal1'}[skill] || 'library1');
 } else {
   window.addEventListener('storage',e=>{if(e.key===null || e.key.startsWith(prefix))render();});
   render();

@@ -203,6 +203,12 @@ document.getElementById('download').addEventListener('click', () => {
 for (const box of document.querySelectorAll('.recorder')) {
   const btn = box.querySelector('button');
   const note = box.querySelector('.rec-status');
+  const elapsed = document.createElement('span');
+  elapsed.className = 'rec-elapsed';
+  elapsed.setAttribute('role', 'timer');
+  elapsed.setAttribute('aria-label', 'Recording duration');
+  elapsed.hidden = true;
+  btn.after(elapsed);
   btn.addEventListener('click', async () => {
     if (activeRecorder?.state === 'recording') { activeRecorder.stop(); return; }
     btn.disabled = true;
@@ -212,9 +218,16 @@ for (const box of document.querySelectorAll('.recorder')) {
       if (box.closest('.section').hidden) return;
       recorder = new MediaRecorder(stream);
       const buffers = [];
-      const started = performance.now();
+      let started, refresh;
+      function updateElapsed() {
+        const seconds = (performance.now() - started) / 1000;
+        elapsed.textContent = mediaTime(seconds);
+        return seconds;
+      }
       recorder.ondataavailable = event => { if (event.data.size) buffers.push(event.data); };
       recorder.onstop = () => {
+        clearInterval(refresh);
+        const recordedSeconds = updateElapsed();
         delete box.dataset.recording;
         stopSpeakingTimer(recorder);
         if (activeRecorder === recorder) activeRecorder = null;
@@ -226,7 +239,7 @@ for (const box of document.querySelectorAll('.recorder')) {
           player.addEventListener(event, () => stopSpeakingTimer(player));
         }
         player.dataset.src = url;
-        player.dataset.seconds = (performance.now() - started) / 1000;
+        player.dataset.seconds = recordedSeconds;
         player.setAttribute('aria-label','Speaking part '+box.dataset.part+' recording');
 
         const link = document.createElement('a');
@@ -239,6 +252,10 @@ for (const box of document.querySelectorAll('.recorder')) {
         note.textContent = 'Download to keep this recording.';
       };
       recorder.start();
+      started = performance.now();
+      updateElapsed();
+      elapsed.hidden = false;
+      refresh = setInterval(updateElapsed, 200);
       activeRecorder = recorder;
       startSpeakingTimer(recorder);
       btn.textContent = 'Stop recording';
