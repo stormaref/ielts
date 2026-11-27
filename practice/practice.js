@@ -10,6 +10,8 @@ const names = [...new Set(fields.map(el => el.name))];
 const statusText = document.getElementById('save-state');
 const clock = document.getElementById('clock');
 const timer = document.getElementById('timer');
+const timerStatus = document.getElementById('timer-status');
+const resetTimer = document.getElementById('reset-timer');
 const duration = Number(document.body.dataset.minutes) * 60;
 let state = { answers: {}, tab: 1, remaining: duration, deadline: 0 };
 let storageAvailable = true;
@@ -122,6 +124,12 @@ function tick() {
     delete state.mediaTimer;
     persist();
   }
+  if (timerStatus) {
+    const label = state.deadline ? 'Running' : seconds === 0 ? 'Time up' : state.remaining === duration ? 'Starts with audio' : 'Paused';
+    if (timerStatus.textContent !== label) timerStatus.textContent = label;
+    resetTimer.hidden = seconds > 0;
+    return;
+  }
   timer.textContent = state.deadline ? 'Pause timer' : seconds === 0 ? 'Restart timer' : seconds === duration ? 'Start timer' : 'Resume timer';
 }
 const speakingMedia = new Set();
@@ -149,7 +157,7 @@ function saveTimer() {
   tick();
   persist();
 }
-timer.addEventListener('click', () => {
+timer?.addEventListener('click', () => {
   if (state.deadline) pauseTimer();
   else {
     state.deadline = Date.now() + (state.remaining || duration) * 1000;
@@ -158,6 +166,14 @@ timer.addEventListener('click', () => {
   saveTimer();
 });
 if (skill === 'Speaking') {
+  resetTimer?.addEventListener('click', () => {
+    state.remaining = duration;
+    if (speakingMedia.size) {
+      state.deadline = Date.now() + duration * 1000;
+      state.mediaTimer = true;
+    }
+    saveTimer();
+  });
   window.addEventListener('pagehide', () => {
     if (state.mediaTimer) {
       pauseTimer();
