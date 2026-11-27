@@ -389,7 +389,10 @@ document.getElementById('file').onchange=async e=>{
     const conflicts=entries.filter(([k,v])=>read(k) && JSON.stringify(read(k))!==JSON.stringify(v));
     if(conflicts.length && !confirm('Replace '+conflicts.length+' existing entries with the imported versions?'))return;
     let saved=true;
-    for(const [k,v] of entries)if(!write(k,v))saved=false;
+    for(const [k,v] of entries) {
+      if(k.endsWith('/draft'))v.editedAt=Date.now();
+      if(!write(k,v))saved=false;
+    }
     message('Imported '+entries.length+' entries.'+(saved?'':' Export before closing; browser storage is unavailable.'));
     render();
   } catch {message('This file is not a valid IELTS results backup.');}

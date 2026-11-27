@@ -51,10 +51,11 @@ if (window.parent === window) {
     if(e.source!==parent || e.data?.channel!=='ielts18-test1')return;
     if(e.data.type==='notice'){responseNotice.textContent=e.data.text;return;}
     if(e.data.type!=='start' || initialized)return;
-    if(e.data.draft?.answers){
+    if(e.data.draft?.answers && (e.data.draft.editedAt || 0) >= (state.editedAt || 0)){
       Object.assign(state,e.data.draft);
       restoreFields();
     }
+    document.body.dataset.ready = "true";
     showPart(e.data.part || state.tab);
     initialized=true;
     updateCounts();tick();persist();
@@ -62,7 +63,7 @@ if (window.parent === window) {
   });
   savePart.onclick=()=>{
     const panel=sections[state.tab-1];
-    const answerFields=[...panel.querySelectorAll('input,select,textarea')];
+    const answerFields=[...panel.querySelectorAll('input[name],select[name],textarea[name]')];
     const hasAnswer=answerFields.some(el=>['radio','checkbox'].includes(el.type)?el.checked:el.value.trim());
     if(!hasAnswer && skill!=='Speaking'){responseNotice.textContent='Enter an answer first.';return;}
     if(skill==='Speaking' && activeRecorder?.state==='recording'){responseNotice.textContent='Stop your recording before saving this part.';return;}

@@ -139,3 +139,16 @@ footer { justify-content:flex-start; gap:.65rem; padding-inline:clamp(1rem,2.7vw
   #result-notice:not(:empty) { flex-basis:100%; }
   .toolbar nav a { padding:.32rem .55rem; }
 }
+
+.audio-player,.media-transfer { display:flex; align-items:center; flex-wrap:wrap; gap:.65rem; padding:.75rem; background:var(--pale); border-radius:8px; margin:.5rem 0 1rem }
+.audio-player input { flex:1; min-width:5rem; accent-color:var(--teal) }
+.audio-player button:first-child { background:var(--teal); color:white; min-width:4.2rem }
+.play-time { font: .85rem ui-monospace,monospace }
+.media-transfer { font-size:.88rem }
+.media-transfer progress { flex:1; min-width:3rem; accent-color:var(--teal) }
+.gap { display:inline-flex; align-items:center; max-width:100%; vertical-align:middle; gap:.2em }
+.gap input { min-width:0; flex:0 1 8em }
+.response li:has(.gap) + li,.response li + li:has(.gap) { margin-block-start:10px }
+.response p:has(.gap) { line-height:1.9 }
+td .gap { display:flex }
+td .gap input { min-width:0 }

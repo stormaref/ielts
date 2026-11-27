@@ -79,6 +79,7 @@ for (const el of fields) {
     } else {
       state.answers[el.name] = el.value;
     }
+    state.editedAt = Date.now();
     updateCounts();
     persist();
   });
@@ -93,6 +94,7 @@ function showPart(n) {
   });
   document.querySelectorAll('[data-tab]').forEach(btn => btn.setAttribute('aria-pressed', String(Number(btn.dataset.tab) === n)));
   state.tab = n;
+  if (document.body.dataset.ready) sections[n-1].querySelectorAll('[data-src]').forEach(loadMedia);
 }
 document.querySelectorAll('[data-tab]').forEach(btn => btn.addEventListener('click', () => {
   if (activeRecorder?.state === 'recording') activeRecorder.stop();
@@ -153,18 +155,22 @@ for (const box of document.querySelectorAll('.recorder')) {
       const recorder = new MediaRecorder(stream);
       activeRecorder = recorder;
       const buffers = [];
+      const started = performance.now();
       recorder.ondataavailable = event => { if (event.data.size) buffers.push(event.data); };
       recorder.onstop = () => {
         stream.getTracks().forEach(track => track.stop());
         const url = URL.createObjectURL(new Blob(buffers, {type:recorder.mimeType}));
         const player = document.createElement('audio');
-        player.controls = true;
-        player.src = url;
+        player.dataset.src = url;
+        player.dataset.seconds = (performance.now() - started) / 1000;
+        player.setAttribute('aria-label','Speaking part '+box.dataset.part+' recording');
+
         const link = document.createElement('a');
         link.textContent = 'Download recording';
         link.href = url;
         link.download = 'Cambridge 18 - Test 1 - Speaking Part ' + box.dataset.part + (recorder.mimeType.includes('mp4') ? '.mp4' : '.webm');
         box.querySelector('.clips').append(player,link);
+        loadMedia(player);
         btn.textContent = 'Record again';
         note.textContent = 'Download to keep this recording.';
         activeRecorder = null;
