@@ -203,6 +203,8 @@ document.getElementById('download').addEventListener('click', () => {
 for (const box of document.querySelectorAll('.recorder')) {
   const btn = box.querySelector('button');
   const note = box.querySelector('.rec-status');
+  const clips = box.querySelector('.clips');
+  let takeNumber = 0;
   const elapsed = document.createElement('span');
   elapsed.className = 'rec-elapsed';
   elapsed.setAttribute('role', 'timer');
@@ -246,7 +248,33 @@ for (const box of document.querySelectorAll('.recorder')) {
         link.textContent = 'Download recording';
         link.href = url;
         link.download = testName + ' - Speaking Part ' + box.dataset.part + (recorder.mimeType.includes('mp4') ? '.mp4' : '.webm');
-        box.querySelector('.clips').append(player,link);
+        const clip = document.createElement('div');
+        clip.className = 'recorded-clip';
+        const title = document.createElement('strong');
+        title.textContent = 'Take ' + (++takeNumber);
+        const remove = document.createElement('button');
+        remove.type = 'button';
+        remove.textContent = 'Remove recording';
+        remove.setAttribute('aria-label', 'Remove ' + title.textContent);
+        remove.onclick = () => {
+          if (!confirm('Remove ' + title.textContent + ' from Speaking Part ' + box.dataset.part + '?')) return;
+          player.pause();
+          stopSpeakingTimer(player);
+          player.removeAttribute('src');
+          player.load();
+          URL.revokeObjectURL(url);
+          clip.remove();
+          if (!box.dataset.recording) {
+            const last = clips.querySelector('.recorded-clip:last-child audio');
+            elapsed.hidden = !last;
+            if (last) elapsed.textContent = mediaTime(Number(last.dataset.seconds));
+            btn.textContent = last ? 'Record again' : 'Record response';
+            note.textContent = 'Recording removed.';
+          }
+          btn.focus();
+        };
+        clip.append(title,player,link,remove);
+        clips.append(clip);
         loadMedia(player);
         btn.textContent = 'Record again';
         note.textContent = 'Download to keep this recording.';

@@ -45,14 +45,29 @@ if (window.parent === window) {
   }
   document.body.dataset.pane = 'prompt';
   document.querySelector('.parts').after(panePicker);
+  const restart = document.createElement('button');
+  restart.id = 'restart-skill';
+  restart.type = 'button';
+  restart.textContent = 'Restart ' + skill;
+  restart.disabled = true;
+  document.querySelector('footer').append(restart);
+  restart.onclick = () => {
+    const contents = skill === 'Speaking' ? 'recordings in this session, notes' : 'answers';
+    if (!confirm('Restart ' + skill + ' for ' + testName + '? This clears your ' + contents +
+        ', saved results and feedback for all ' + sections.length + ' parts of this skill.')) return;
+    restart.disabled = true;
+    tellTracker({type:'restart'});
+  };
   let initialized=false;
   window.addEventListener('ielts-draft',()=>{if(initialized)tellTracker({type:'draft',value:state});});
   window.addEventListener('message',e=>{
     if(e.source!==parent || e.data?.channel!==channel)return;
     if(e.data.type==='notice'){responseNotice.textContent=e.data.text;return;}
     if(e.data.type!=='start' || initialized)return;
-    if(e.data.draft?.answers && (e.data.draft.editedAt || 0) >= (state.editedAt || 0)){
-      Object.assign(state,e.data.draft);
+    const draft = e.data.draft;
+    if (draft?.answers && ((draft.attemptStartedAt || 0) > (state.attemptStartedAt || 0)
+        || (draft.attemptStartedAt || 0) === (state.attemptStartedAt || 0) && (draft.editedAt || 0) >= (state.editedAt || 0))) {
+      state = {tab:1, remaining:duration, deadline:0, ...draft};
       restoreFields();
     }
     if (!clock) state.deadline = 0;
@@ -63,6 +78,7 @@ if (window.parent === window) {
     initialized=true;
     updateCounts();tick();persist();
     savePart.disabled=false;
+    restart.disabled=false;
   });
   savePart.onclick=()=>{
     const panel=sections[state.tab-1];

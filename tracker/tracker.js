@@ -332,7 +332,7 @@ function allRecords() {
     }
   } catch {}
   for(const [k,v] of memory)collected[k]=v;
-  return collected;
+  return Object.fromEntries(Object.entries(collected).filter(([,value])=>value!==null));
 }
 function exportResults(testOnly) {
   const records=allRecords();
@@ -378,7 +378,7 @@ document.getElementById('file').onchange=async e=>{
     if(conflicts.length && !confirm('Replace '+conflicts.length+' existing entries with the imported versions?'))return;
     let saved=true;
     for(const [k,v] of entries) {
-      if(k.endsWith('/draft'))v.editedAt=Date.now();
+      if(k.endsWith('/draft'))v.attemptStartedAt=v.editedAt=Date.now();
       if(!write(k,v))saved=false;
     }
     message('Imported '+entries.length+' entries.'+(saved?'':' Export before closing; browser storage is unavailable.'));
@@ -401,6 +401,22 @@ if (practice) {
     function send(data){frame.contentWindow.postMessage({channel:'ielts-'+testId,...data},'*');}
     if(msg.type==='ready') {
       send({type:'start',draft:read(key),part:Number(params.get('part'))});
+    } else if (msg.type === 'restart') {
+      const stamp = Date.now();
+      write(key,{answers:{}, tab:1, attemptStartedAt:stamp, editedAt:stamp});
+      const records = [id(book,test,skill,'band')];
+      for (let n=1; n<=partCounts[skill]; n++) records.push(id(book,test,skill,'part',n));
+      for (const record of records) {
+        try { localStorage.removeItem(prefix+record); memory.delete(record); }
+        catch { memory.set(record,null); }
+      }
+      params.delete('part');
+      const destination=new URL(location.href);
+      destination.searchParams.delete('part');
+      try { history.replaceState(null,'',destination); } catch {}
+      frame.src = frame.src;
+    } else if ((msg.type==='draft' || msg.type==='submit') && (msg.value?.attemptStartedAt || 0) < (read(key)?.attemptStartedAt || 0)) {
+      send({type:'notice',text:'This skill was restarted. Reload to open the current attempt.'});
     } else if(msg.type==='draft' && validDraft(msg.value)) {
       const ok=write(key,msg.value);
       if(!ok)send({type:'notice',text:'Browser storage unavailable. Export results before closing.'});
@@ -424,7 +440,7 @@ if (practice) {
     }
   });
   frame.hidden=false;
-  frame.src=testFolder+skill+'.html?v='+({Speaking:'elapsed1',Listening:'signal1'}[skill] || 'library1');
+  frame.src=testFolder+skill+'.html?v=restart1';
 } else {
   window.addEventListener('storage',e=>{if(e.key===null || e.key.startsWith(prefix))render();});
   render();

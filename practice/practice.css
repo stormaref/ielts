@@ -172,3 +172,7 @@ td .gap input { min-width:0 }
 .recorder[data-recording] .record::before { border-radius:2px; }
 .mic-signal { display:block; width:100%; height:3rem; box-sizing:border-box; padding:.35rem .65rem; margin:.6rem 0; background:var(--pale); color:var(--teal); border-radius:8px; }
 .rec-elapsed { margin-inline-start:.6rem; font:600 1rem ui-monospace,monospace; font-variant-numeric:tabular-nums; }
+
+.recorded-clip { padding:.65rem 0; border-top:1px solid var(--line); }
+.recorded-clip .audio-player { margin:.35rem 0; }
+.recorded-clip > button { margin-inline-start:.7rem; }
