@@ -142,7 +142,13 @@ footer { justify-content:flex-start; gap:.65rem; padding-inline:clamp(1rem,2.7vw
 
 .audio-player,.media-transfer { display:flex; align-items:center; flex-wrap:wrap; gap:.65rem; padding:.75rem; background:var(--pale); border-radius:8px; margin:.5rem 0 1rem }
 .audio-player input { flex:1; min-width:5rem; accent-color:var(--teal) }
-.audio-player button:first-child { background:var(--teal); color:white; min-width:4.2rem }
+.audio-player .play-toggle { display:grid; place-items:center; flex:none; width:2.6rem; height:2.6rem; padding:0; background:var(--teal); color:white; border:0; border-radius:50%; }
+.play-toggle:disabled { opacity:.55; cursor:default; }
+.play-toggle svg { fill:currentColor; }
+.play-toggle[data-playing=false] .pause-icon,.play-toggle[data-playing=true] .play-icon { display:none; }
+.audio-player:has(.media-transfer:not([hidden])) > :is(input,.play-time) { display:none; }
+.audio-player > .media-transfer { flex:1; margin:0; padding:0; }
+.audio-player > .media-transfer progress { order:-1; }
 .play-time { font: .85rem ui-monospace,monospace }
 .media-transfer { font-size:.88rem }
 .media-transfer progress { flex:1; min-width:3rem; accent-color:var(--teal) }
@@ -156,7 +162,6 @@ td .gap input { min-width:0 }
 .listening-track { display:flex; flex-wrap:wrap; align-items:center; gap:.5rem 1rem; margin:.25rem 0 .7rem; padding:.45rem .75rem; border:1px solid var(--line); border-radius:8px; background:var(--pale); }
 .listening-track strong { font-size:.9rem; }
 .listening-track .audio-player { flex:1 1 18rem; margin:0; padding:0; }
-.listening-track .media-transfer { flex-basis:100%; order:1; margin:0; padding:.25rem 0; }
 .task-chart { margin:1.25rem 0 0; }
 .task-chart img { display:block; width:100%; max-width:805px; height:auto; }
 .task-chart figcaption { margin-top:.4rem; font-size:.875rem; }

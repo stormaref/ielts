@@ -11,7 +11,9 @@ function audioControls(audio) {
   box.setAttribute('role', 'group');
   box.setAttribute('aria-label', audio.getAttribute('aria-label') || 'Recorded response');
   const play = document.createElement('button');
-  const mute = document.createElement('button');
+  play.type = 'button';
+  play.className = 'play-toggle';
+  play.innerHTML = '<svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true" focusable="false"><path class="play-icon" d="M7 4v16l13-8z"/><path class="pause-icon" d="M6 4h4v16H6zm8 0h4v16h-4z"/></svg>';
   const seek = document.createElement('input');
   seek.type = 'range';
   seek.min = 0;
@@ -20,14 +22,16 @@ function audioControls(audio) {
   seek.setAttribute('aria-label', 'Playback position');
   const time = document.createElement('span');
   time.className = 'play-time';
-  box.append(play, seek, time, mute);
+  box.append(play, seek, time);
   audio.before(box);
   audio.hidden = true;
   function sync() {
     const length = Number.isFinite(audio.duration) ? audio.duration : Number(audio.dataset.seconds) || 0;
-    play.textContent = audio.paused ? 'Play' : 'Pause';
+    const action = audio.paused ? 'Play' : 'Pause';
+    play.setAttribute('aria-label', action);
+    play.title = action;
+    play.dataset.playing = String(!audio.paused);
     play.disabled = audio.readyState < 2 || Boolean(audio.error);
-    mute.textContent = audio.muted ? 'Unmute' : 'Mute';
     seek.disabled = !length || play.disabled;
     seek.max = length;
     seek.value = audio.currentTime;
@@ -39,9 +43,8 @@ function audioControls(audio) {
     try { await audio.play(); }
     catch { if (audio.error) audio.dispatchEvent(new Event('error')); }
   };
-  mute.onclick = () => { audio.muted = !audio.muted; };
   seek.oninput = () => { audio.currentTime = Number(seek.value); };
-  for (const event of ['loadeddata','canplay','durationchange','timeupdate','play','pause','ended','error','emptied','volumechange']) {
+  for (const event of ['loadeddata','canplay','durationchange','timeupdate','play','pause','ended','error','emptied']) {
     audio.addEventListener(event, sync);
   }
   sync();
@@ -61,7 +64,8 @@ function loadMedia(asset) {
   const retry = document.createElement('button');
   retry.textContent = 'Retry';
   status.append(description, progress, retry);
-  control.before(status);
+  if (isAudio) control.append(status);
+  else control.before(status);
   const source = new URL(asset.dataset.src, document.baseURI);
   let downloadedURL;
   function failed() {
